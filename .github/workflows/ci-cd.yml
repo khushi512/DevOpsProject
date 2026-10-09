@@ -65,12 +65,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
+      - name: Check Kubernetes credentials
+        id: check_k8s
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        run: |
+          if [ -z "$KUBE_CONFIG_DATA" ]; then
+            echo "k8s_ready=false" >> $GITHUB_OUTPUT
+            echo "KUBE_CONFIG_DATA secret is not yet set. Skipping cluster deployment until AWS EKS is provisioned."
+          else
+            echo "k8s_ready=true" >> $GITHUB_OUTPUT
+          fi
       - name: Configure kubectl
+        if: steps.check_k8s.outputs.k8s_ready == 'true'
         env: {KUBE_CONFIG_DATA: '${{ secrets.KUBE_CONFIG_DATA }}'}
         run: |
           mkdir -p ~/.kube
           echo "$KUBE_CONFIG_DATA" | base64 -d > ~/.kube/config
       - name: Deploy with Helm
+        if: steps.check_k8s.outputs.k8s_ready == 'true'
         run: |
           helm upgrade --install taskboard ./helm/taskboard -n taskboard --create-namespace \
             --set backend.tag=${{ github.sha }} \
