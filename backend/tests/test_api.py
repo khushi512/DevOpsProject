@@ -1,4 +1,4 @@
-﻿import os
+import os
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 
 from fastapi.testclient import TestClient
@@ -12,7 +12,7 @@ def test_root():
     with TestClient(app) as client:
         response = client.get("/")
         assert response.status_code == 200
-        assert response.json()["service"] == "TaskBoard API"
+        assert response.json()["service"] == "OpsDesk Incident API"
 
 def test_create_task_validation():
     with TestClient(app) as client:
